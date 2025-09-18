@@ -1,5 +1,6 @@
 use crate::modelo::{Credenciales, UsuarioGuardado};
 use crate::guardado_local::{guardar_usuario, cargar_usuario};
+use jni::objects::JValue;
 use reqwest::Client;
 use std::sync::Arc;
 
@@ -27,14 +28,14 @@ pub async fn verificar_credenciales(mut env: JNIEnv, this:JObject, cliente: Arc<
                     }
                 }
             } else if status == reqwest::StatusCode::UNAUTHORIZED { //revisamos si el status fue un error (no existen esas credenciales)
-                
-            } else {
-                
+                env.call_method(this, "mostrar_error", "(Ljava/lang/String;)V",
+                &[JValue::from(env.new_string("Credenciales no validas").unwrap())]).unwrap();
             }
         }
         //en caso de que exista un error en el proceso de la peticion
         Err(err) => {
-            
+            env.call_method(this, "mostrar_error", "(Ljava/lang/String;)V",
+            &[JValue::from(env.new_string("Error al realizar la peticion").unwrap())]).unwrap();
         }
     }
 }

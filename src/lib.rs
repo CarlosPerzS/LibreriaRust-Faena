@@ -23,24 +23,6 @@ fn init_logger() {
         });
     }
 }
-ui.on_login({
-        let ui_handle = ui.as_weak();
-        move || {
-            let ui_instance = ui_handle.unwrap(); 
-            let correo = ui_instance.get_email_login().to_string();
-            let pswd = ui_instance.get_pswd_login().to_string();
-
-            if correo.is_empty() || pswd.is_empty(){
-                ui_instance.set_empty_error("Datos vacios".into());
-                ui_instance.set_empty_error_text_color(ui_instance.get_rojo());
-                ui_instance.set_input_border_color(ui_instance.get_border());
-            } 
-            else {
-                let client = client1.clone();
-                tokio::spawn(verificar_credenciales(client, correo, pswd, ui_handle.clone()));
-            }
-        }
-    });
     //se necesita que el nombre sea Java_paquete_clase_nombre de la funcion
 pub extern "C" fn Java_com_example_faena_MainActivity_login(mut env: JNIEnv, this:JObject, correo:JString, pswd:JString){ //en env y class/this son argumentos dados por JNI cuando se invoca a la funcion
     let correo = env.get_string(correo).unwrap().into();
@@ -55,7 +37,7 @@ pub extern "C" fn Java_com_example_faena_MainActivity_login(mut env: JNIEnv, thi
         tokio::spawn(verificar_credenciales(env, this,client, correo, pswd));
     }
 }
-fn setup_app_logic(ui: &MainWindow) {
+fn start_rust(ui: &MainWindow) {
     #[cfg(target_os = "android")]
     log::info!("🦀 Rust: Configurando lógica de la app...");
     let salas_model = Rc::new(VecModel::from(Vec::<(SharedString, SharedString)>::new()));
