@@ -3,6 +3,10 @@ name = "LibreriaRust-Faena"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "LibreriaRust"
+crate-type = ["cdylib"]
+
 [dependencies]
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
 tokio ={ version = "1", features = ["full"]}
@@ -15,3 +19,8 @@ jsonwebtoken = "9.3.1"
 rand = "0.9.2"
 jni = "0.21.0"
 log = "0.4"
+
+[target.'cfg(target_os = "android")'.dependencies]
+android-activity = { version = "0.6", features = ["native-activity"] }
+android_logger = "0.14"
+jni = "0.21"
