@@ -1,1 +1,1 @@
-C:\Users\Carlos\projects\rust\LibreriaRust-Faena\target\i686-linux-android\release\libLibreriaRust.so: C:\Users\Carlos\projects\rust\LibreriaRust-Faena\src\lib.rs C:\Users\Carlos\projects\rust\LibreriaRust-Faena\src\login.rs C:\Users\Carlos\projects\rust\LibreriaRust-Faena\src\modelo.rs
+C:\Faena\LibreriaRust-Faena\target\i686-linux-android\release\libLibreriaRust.so: C:\Faena\LibreriaRust-Faena\src\lib.rs C:\Faena\LibreriaRust-Faena\src\login.rs C:\Faena\LibreriaRust-Faena\src\modelo.rs C:\Faena\LibreriaRust-Faena\src\p2pcon.rs C:\Faena\LibreriaRust-Faena\src\registrar.rs

@@ -1,6 +1,7 @@
 #[allow(dead_code)]
 mod login;
 mod modelo;
+mod p2pcon;
 #[allow(dead_code)]
 mod registrar;
 #[allow(unused_imports)]
@@ -11,6 +12,9 @@ use login::verificar_credenciales;
 use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JValue, JString};
 use jni::sys::{jint};
+
+use futures::prelude::*;
+use p2pcon::init_node;
 
 use crate::modelo::Usuario;
 
@@ -63,6 +67,47 @@ pub extern "C" fn Java_com_example_faena_register_registrarUsuario(mut env: JNIE
         }
     }
 }
+
+pub extern "C" fn Java_com_example_faena_P2PBridge_iniciarNodo(mut env: JNIEnv, this: JObject) {
+   
+    init_logger();
+
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    // Ejecuta el nodo y el loop de eventos en el runtime
+    runtime.block_on(async {
+        // Inicializa el nodo
+        let mut swarm = match init_node(tx).await {
+            Ok(s) => s,
+            Err(e) => {
+                
+                env.call_method(
+                    this,
+                    "mostrar_error",
+                    "(Ljava/lang/String;)V",
+                    &[JValue::from(&env.new_string(format!("Error al iniciar nodo: {e}")).unwrap())]
+                ).unwrap();
+                return;
+            }
+        };
+
+        // Loop de eventos principal
+        loop {
+            match swarm.select_next_some().await {
+                libp2p::swarm::SwarmEvent::NewListenAddr { address, .. } => {
+                    // Aquí podrías enviar la dirección a Java si lo necesitas
+                }
+                libp2p::swarm::SwarmEvent::Behaviour(event) => {
+                    // Aquí podrías procesar eventos de ping, etc.
+                }
+                _ => {}
+            }
+        }
+    });
+}
+
 
 
 #[unsafe(no_mangle)]

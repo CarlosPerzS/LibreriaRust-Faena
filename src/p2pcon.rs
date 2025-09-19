@@ -1,7 +1,7 @@
 use std::{error::Error, time::Duration, u64};
 
-use futures::prelude::*;
-use libp2p::{noise, ping, swarm::SwarmEvent, tcp, yamux, Multiaddr};
+
+use libp2p::{noise, ping, swarm::SwarmEvent, tcp, yamux, Multiaddr, Swarm};
 use tokio::sync::mpsc;
 use tracing_subscriber::EnvFilter;
 
@@ -24,18 +24,6 @@ pub async fn init_node(
         .build();
 
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
-
-    tokio::spawn(async move{
-        loop {
-        match swarm.select_next_some().await {
-            SwarmEvent::NewListenAddr { address, .. } => {
-                let _ = tx.send(address).await;
-            }
-            SwarmEvent::Behaviour(event) => println!("{event:?}"),
-            _ => {}
-        }
-    }
-    });
 
     Ok(swarm)
 }
