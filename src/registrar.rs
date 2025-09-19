@@ -49,7 +49,7 @@ pub fn validar_usuario(username: &str, correo: &str, pswd: &str, confirm_pswd: &
 }
 
 pub async fn registrar_usuario(mut env: JNIEnv<'_>, this: JObject<'_>,cliente: Arc<Client>,username: String,correo: String,password: String){
-    let url="http://192.168.137.12:8000/api/usuarios"; //url para la api rest con los usuarios
+    let url="http://192.168.100.76:8001/usuarios"; //url para la api rest con los usuarios
     match cliente.get(url).send().await{ //consulta de todos los usuarios para verificar correos
         Ok(res)=>{ //respuesta de GET
             match res.json::<Vec<Usuario>>().await{

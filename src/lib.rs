@@ -46,6 +46,7 @@ pub extern "C" fn Java_com_example_faena_login_login(mut env: JNIEnv, this:JObje
 }
 
 //funcion para registrar un usuario en la BD
+#[unsafe(no_mangle)]
 pub extern "C" fn Java_com_example_faena_register_registrarUsuario(mut env: JNIEnv, this:JObject, username:JString, correo:JString, pswd:JString,confirm_pswd:JString){
     let correo: String = env.get_string(&correo).unwrap().into();
     let pswd: String = env.get_string(&pswd).unwrap().into();
@@ -72,6 +73,6 @@ pub extern "C" fn Java_com_example_faena_register_testJni(
 ) -> jint {
     init_logger();
     #[cfg(target_os = "android")]
-    log::info!("🦀 Rust: Función test_jni llamada exitosamente!");
+    log::info!("Rust: Función test_jni llamada exitosamente!");
     42
 }
