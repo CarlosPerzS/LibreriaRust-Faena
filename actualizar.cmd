@@ -1,9 +1,6 @@
 @echo off
 setlocal
-set "RUST_PATH=C:\Users\Carlos\projects\rust\LibreriaRust-Faena"
-set "ANDROID_PATH=C:\Users\Carlos\AndroidStudioProjects\Faena"
-set "LIB=libLibreriaRust.so"
-
+call rutas.cmd
 cd /d "%RUST_PATH%"
 
 cargo ndk --target aarch64-linux-android --platform 28 build --release
@@ -15,7 +12,6 @@ set "RUST_X86=%RUST_PATH%\target\i686-linux-android\release\%LIB%"
 set "ANDROID_X86=%ANDROID_PATH%\app\src\main\jniLibs\x86"
 
 copy /Y "%RUST_ARM64%" "%ANDROID_ARM64%"
-
 copy /Y "%RUST_X86%" "%ANDROID_X86%"
 
 :eof
