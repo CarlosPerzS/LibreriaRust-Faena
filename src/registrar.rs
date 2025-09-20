@@ -1,4 +1,3 @@
-
 use crate::modelo::{Usuario, UsuarioGuardado};
 use jni::objects::JValue;
 use jni::JNIEnv;
@@ -49,63 +48,35 @@ pub fn validar_usuario(username: &str, correo: &str, pswd: &str, confirm_pswd: &
 }
 
 pub async fn registrar_usuario(mut env: JNIEnv<'_>, this: JObject<'_>,cliente: Arc<Client>,username: String,correo: String,password: String){
-    let url="http://192.168.100.76:8001/usuarios"; //url para la api rest con los usuarios
-    match cliente.get(url).send().await{ //consulta de todos los usuarios para verificar correos
-        Ok(res)=>{ //respuesta de GET
-            match res.json::<Vec<Usuario>>().await{
-                Ok(usuarios)=>{ //si tenemos a los usuarios
-                    let mut correo_registrado = false;
-                    for usuario in usuarios{
-                        if usuario.email==correo{
-                            correo_registrado=true;
-                            break;
-                        }
+    let nuevo_usuario= Usuario{
+        nombre: username.clone(),
+        email: correo.clone(),
+        contrasena: password.clone(),
+        premium: false,
+    };
+    let url="http://192.168.100.76:8001/usuarios";
+    let res= cliente.post(url).json(&nuevo_usuario).send().await;
+    match res {
+        Ok(_res)=>{
+            if _res.status().is_success(){
+                match _res.json::<UsuarioGuardado>().await {
+                    Ok(usuario) => {
+                        let nombre = env.new_string(&usuario.usuario.nombre).unwrap();
+                        let token = env.new_string(&usuario.token).unwrap();
+                        env.call_method(&this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
+                        &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
                     }
-                    if !correo_registrado{
-                        let nuevo_usuario= Usuario{
-                            nombre: username.clone(),
-                            email: correo.clone(),
-                            contrasena: password.clone(),
-                            premium: false,
-                        };
-                        let res= cliente.post(url).json(&nuevo_usuario).send().await;
-                        match res {
-                            Ok(_res)=>{
-                                if _res.status().is_success(){
-                                    match _res.json::<UsuarioGuardado>().await {
-                                        Ok(usuario) => {
-                                            let nombre = env.new_string(&usuario.usuario.nombre).unwrap();
-                                            let token = env.new_string(&usuario.token).unwrap();
-                                            env.call_method(&this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
-                                            &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
-                                        }
-                                        Err(err)=>{
-                                            eprintln!("Error al parsear JSON: {:?}", err);
-                                        }
-
-                                    }
-                                }
-                                else{
-                                    eprintln!("ERROR: {:?}", _res);
-                                }
-                            }
-                            Err(err)=>{
-                                eprintln!("Fallo al hacer peticion POST: {:?}", err);
-                            }
-                        }
+                    Err(err)=>{
+                        eprintln!("Error al parsear JSON: {:?}", err);
                     }
-                    if correo_registrado{
-                        env.call_method(this, "mostrar_error", "(Ljava/lang/String;)V", 
-                    &[JValue::from(&env.new_string("Correo registrado").unwrap())]).unwrap();
-                    }
-                }
-                Err(err) => { //error si no tenermos usuarios
-                        eprintln!("Error al conseguir los usuarios: {:?}", err);
                 }
             }
+            else{
+                eprintln!("ERROR: {:?}", _res);
+            }
         }
-    Err(err) => { //error de GET
-        eprintln!("Error al hacer la peticion reqwest: {:?}", err);
+        Err(err)=>{
+            eprintln!("Fallo al hacer peticion POST: {:?}", err);
+        }
     }
-}
 }

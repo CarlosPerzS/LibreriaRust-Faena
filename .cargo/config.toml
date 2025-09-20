@@ -4,7 +4,6 @@ rustflags = ["-C", "link-arg=/STACK:8000000"]
 [target.aarch64-pc-windows-msvc]
 rustflags = ["-C", "link-arg=/STACK:8000000"]
 
-# CONFIGURACIÓN DIRECTA SIN VARIABLES (100% funcional)
 [target.i686-linux-android]
 linker = "C:/Users/Carlos/AppData/Local/Android/Sdk/ndk/29.0.13599879/toolchains/llvm/prebuilt/windows-x86_64/bin/i686-linux-android28-clang.cmd"
 ar = "C:/Users/Carlos/AppData/Local/Android/Sdk/ndk/29.0.13599879/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-ar.exe"

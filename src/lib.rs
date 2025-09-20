@@ -21,9 +21,7 @@ fn init_logger() {
     {
         LOGGER_INIT.call_once(|| {
             android_logger::init_once(
-                android_logger::Config::default()
-                    .with_max_level(log::LevelFilter::Debug)
-                    .with_tag("Rust")
+                android_logger::Config::default().with_max_level(log::LevelFilter::Debug).with_tag("Rust")
             );
         });
     }
@@ -37,7 +35,7 @@ pub extern "C" fn Java_com_example_faena_login_login(mut env: JNIEnv, this:JObje
         env.call_method(this, "mostrar_error", "(Ljava/lang/String;)V", //objeto, fn name, parametros y tipo de retorno de la fn
         &[JValue::from(&env.new_string("Correo o contraseña vacíos").unwrap())]).unwrap(); //argumentos, necesita ser JValue y un array
         return;
-    } 
+    }
     else {
         let client = Arc::new(reqwest::Client::new());
         let runtime = tokio::runtime::Runtime::new().unwrap();
