@@ -1,7 +1,5 @@
 use crate::modelo::{UsuarioGuardado, NuevoUsuario};
-use crate::JVM; 
-use crate::mostrar_error;
-use jni::objects::JValue;
+use crate::{mostrar_error, guardar_usuario};
 use jni::objects::GlobalRef;
 use reqwest::Client;
 use std::sync::Arc;
@@ -50,7 +48,6 @@ pub fn validar_usuario(username: &str, correo: &str, pswd: &str, confirm_pswd: &
 }
 
 pub async fn registrar_usuario(this: GlobalRef,cliente: Arc<Client>,username: String,correo: String,password: String){
-    let jvm = JVM.get().expect("JVM sin inicializacion"); //esto se necesita en cada funcion
     let nuevo_usuario= NuevoUsuario{
         nombre: username.clone(),
         email: correo.clone(),
@@ -63,11 +60,7 @@ pub async fn registrar_usuario(this: GlobalRef,cliente: Arc<Client>,username: St
             if _res.status().is_success(){
                 match _res.json::<UsuarioGuardado>().await {
                     Ok(usuario) => {
-                        let mut env = jvm.attach_current_thread().unwrap();
-                        let nombre = env.new_string(&usuario.usuario).unwrap();
-                        let token = env.new_string(&usuario.token).unwrap();
-                        env.call_method(&this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
-                        &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
+                        guardar_usuario(usuario, &this);
                     }
                     Err(err)=>{
                         mostrar_error(err.to_string(), &this);

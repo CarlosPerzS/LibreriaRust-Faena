@@ -15,6 +15,8 @@ use std::ffi::c_void;
 use once_cell::sync::OnceCell;
 use tokio::runtime::Runtime;
 
+use crate::modelo::UsuarioGuardado;
+
 //variables publicas para la conexion entre la app y libreria
 pub static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new(); //gestor de hilos principal
 pub static JVM: OnceCell<JavaVM> = OnceCell::new(); //jvm de parte de android, las almacenamos en OnceCell para evitar cambios repentinos
@@ -99,4 +101,12 @@ fn mostrar_error(err:String, this: &GlobalRef){
     let error_jstring = env.new_string(err).unwrap();
     env.call_method(&this,"mostrar_error","(Ljava/lang/String;)V",
     &[JValue::from(&error_jstring)],).expect("Fallo al mostrar error");
+}
+fn guardar_usuario(usuario:UsuarioGuardado, this: &GlobalRef){
+    let jvm = JVM.get().expect("JVM sin inicializacion");
+    let mut env = jvm.attach_current_thread().unwrap();
+    let nombre = env.new_string(&usuario.usuario).unwrap();
+    let token = env.new_string(&usuario.token).unwrap();
+    env.call_method(this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
+    &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
 }

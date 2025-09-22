@@ -1,13 +1,12 @@
 use crate::modelo::{Credenciales, UsuarioGuardado};
-use crate::JVM;
-use jni::objects::{GlobalRef, JValue};
+use crate::guardar_usuario;
+use jni::objects::GlobalRef;
 use reqwest::Client;
 use std::sync::Arc;
 use crate::mostrar_error;
 
 pub async fn verificar_credenciales(this: GlobalRef, cliente: Arc<Client>,correo: String,password: String) 
 {   
-    let jvm = JVM.get().expect("Error al conectar con JVM");
     let url = "http://192.168.100.76:8001/api/login"; // URL de la API
     let credenciales = Credenciales { //creamos una instancia de la clase credenciales con los datos de login
         email: correo,
@@ -22,11 +21,7 @@ pub async fn verificar_credenciales(this: GlobalRef, cliente: Arc<Client>,correo
             if status.is_success() {
                 match res.json::<UsuarioGuardado>().await { //parseamos la respuesta de json a nuestra clase usuario
                     Ok(usuario) => {
-                        let mut env = jvm.attach_current_thread().unwrap();
-                        let nombre = env.new_string(&usuario.usuario).unwrap();
-                        let token = env.new_string(&usuario.token).unwrap();
-                        env.call_method(this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
-                        &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
+                        guardar_usuario(usuario, &this);
                     }
                     Err(err) => {
                         eprintln!("Error al parsear JSON: {:?}", err);
