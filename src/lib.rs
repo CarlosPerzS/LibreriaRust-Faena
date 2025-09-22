@@ -8,13 +8,28 @@ use registrar::{registrar_usuario, validar_usuario};
 #[allow(unused_imports)]
 use std::sync::Arc;
 use login::verificar_credenciales;
-use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JValue, JString};
-use jni::sys::{jint};
+use jni::{JNIEnv, JavaVM};
+use jni::objects::{GlobalRef,JClass, JObject, JValue, JString};
+use jni::sys::{jint,JNI_VERSION_1_6};
+use std::ffi::c_void;
+use once_cell::sync::OnceCell;
+use tokio::runtime::Runtime;
 
-use crate::modelo::Usuario;
-
+//variables publicas para la conexion entre la app y libreria
+pub static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new(); //gestor de hilos principal
+pub static JVM: OnceCell<JavaVM> = OnceCell::new(); //jvm de parte de android, las almacenamos en OnceCell para evitar cambios repentinos
 static LOGGER_INIT: std::sync::Once = std::sync::Once::new();
+
+//funcion para inicializar la variable publica de JVM para poder tener tareas asincronas como las peticiones reqwest e inicializacion en general
+#[unsafe(no_mangle)] 
+pub extern "system" fn JNI_OnLoad(vm: JavaVM, _: *mut c_void) -> jint { //recibimos la JVM de java android
+    init_logger(); // 
+    TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap()); //incializacion de runtime de tokio
+    if JVM.set(vm).is_err() { //inicializacion de la jvm (variable global de la libreria)
+        return -1; // JNI_ERR
+    }
+    JNI_VERSION_1_6
+}
 
 fn init_logger() {
     #[cfg(target_os = "android")]
@@ -28,6 +43,7 @@ fn init_logger() {
 }
     //se necesita que el nombre sea Java_paquete_clase_nombre de la funcion
 //funcion para iniciar sesion en la bd desde rust
+#[unsafe(no_mangle)]
 pub extern "C" fn Java_com_example_faena_login_login(mut env: JNIEnv, this:JObject, correo:JString, pswd:JString){ //en env y class/this son argumentos dados por JNI cuando se invoca a la funcion
     let correo: String = env.get_string(&correo).unwrap().into();
     let pswd: String = env.get_string(&pswd).unwrap().into();
@@ -52,12 +68,13 @@ pub extern "C" fn Java_com_example_faena_register_registrarUsuario(mut env: JNIE
     let confirm_pswd: String = env.get_string(&confirm_pswd).unwrap().into();
     match validar_usuario(&username, &correo, &pswd, &confirm_pswd){
         Ok(_) => {
+            let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
+            let this_ref = env.new_global_ref(this).unwrap();
             let client= Arc::new(reqwest::Client::new());
-            let runtime = tokio::runtime::Runtime::new().unwrap();
-            runtime.block_on(registrar_usuario(env, this,client, username, correo, pswd));
+            runtime.spawn(registrar_usuario(this_ref,client, username, correo, pswd));
         }
         Err(err) => {
-            env.call_method(this, "mostrar_error", "(Ljava/lang/String;)V", //objeto, fn name, parametros y tipo de retorno de la fn
+            env.call_method(&this, "mostrar_error", "(Ljava/lang/String;)V", //objeto, fn name, parametros y tipo de retorno de la fn
         &[JValue::from(&env.new_string(err.to_string()).unwrap())]).unwrap(); //argumentos, necesita ser JValue y un array
         }
     }

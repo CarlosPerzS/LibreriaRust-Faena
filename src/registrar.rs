@@ -1,9 +1,10 @@
-use crate::modelo::{Usuario, UsuarioGuardado};
+use crate::modelo::{UsuarioGuardado, NuevoUsuario};
+use crate::JVM; 
 use jni::objects::JValue;
-use jni::JNIEnv;
-use jni::objects::{JObject};
+use jni::objects::GlobalRef;
 use reqwest::Client;
 use std::sync::Arc;
+
 
 // Funciones para validar la password
 fn buscar_caracter_especial(password:&str) -> bool{
@@ -47,36 +48,49 @@ pub fn validar_usuario(username: &str, correo: &str, pswd: &str, confirm_pswd: &
     }
 }
 
-pub async fn registrar_usuario(mut env: JNIEnv<'_>, this: JObject<'_>,cliente: Arc<Client>,username: String,correo: String,password: String){
-    let nuevo_usuario= Usuario{
+pub async fn registrar_usuario(this: GlobalRef,cliente: Arc<Client>,username: String,correo: String,password: String){
+    let jvm = JVM.get().expect("JVM sin inicializacion"); //esto se necesita en cada funcion
+    let nuevo_usuario= NuevoUsuario{
         nombre: username.clone(),
         email: correo.clone(),
         contrasena: password.clone(),
-        premium: false,
     };
-    let url="http://192.168.100.76:8001/usuarios";
+    let url="http://192.168.100.76:8001/api/usuarios";
     let res= cliente.post(url).json(&nuevo_usuario).send().await;
     match res {
         Ok(_res)=>{
             if _res.status().is_success(){
                 match _res.json::<UsuarioGuardado>().await {
                     Ok(usuario) => {
-                        let nombre = env.new_string(&usuario.usuario.nombre).unwrap();
+                        let mut env = jvm.attach_current_thread().unwrap();
+                        let nombre = env.new_string(&usuario.usuario).unwrap();
                         let token = env.new_string(&usuario.token).unwrap();
                         env.call_method(&this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
                         &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
                     }
                     Err(err)=>{
-                        eprintln!("Error al parsear JSON: {:?}", err);
+                        mostrar_error(err.to_string(), &this);
                     }
                 }
             }
+            else if _res.status()==409 {
+                mostrar_error("Correo electronico ya registrado".to_string(), &this);
+            }
             else{
-                eprintln!("ERROR: {:?}", _res);
+                let error_texto = _res.text().await.unwrap_or_default();
+                mostrar_error(error_texto, &this);
             }
         }
         Err(err)=>{
-            eprintln!("Fallo al hacer peticion POST: {:?}", err);
+            mostrar_error(err.to_string(), &this);
         }
     }
+}
+
+fn mostrar_error(err:String, this: &GlobalRef){
+    let jvm = JVM.get().expect("JVM sin inicializacion");
+    let mut env = jvm.attach_current_thread().unwrap();
+    let error_jstring = env.new_string(err).unwrap();
+    env.call_method(&this,"mostrar_error","(Ljava/lang/String;)V",
+    &[JValue::from(&error_jstring)],).expect("Fallo al mostrar error");
 }

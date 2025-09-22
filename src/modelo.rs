@@ -10,9 +10,16 @@ pub struct Usuario {
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
+pub struct NuevoUsuario {
+    pub nombre: String,
+    pub contrasena: String,
+    pub email: String
+}
+
+#[derive(Debug, Deserialize, Serialize, Default)]
 // estructura de los usuarios en rust, posteriolmente se convierte en json
 pub struct UsuarioGuardado {
-    pub usuario: Usuario,
+    pub usuario: String,
     pub token: String,
 }
 
