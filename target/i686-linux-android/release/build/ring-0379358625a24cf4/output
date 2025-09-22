@@ -12,13 +12,13 @@ cargo:rerun-if-env-changed=CARGO_CFG_TARGET_OS
 cargo:rerun-if-env-changed=CARGO_CFG_TARGET_ENV
 cargo:rerun-if-env-changed=CARGO_CFG_TARGET_ENDIAN
 OPT_LEVEL = Some(3)
-OUT_DIR = Some(C:\Users\Carlos\projects\rust\Libreriarust-faena\target\i686-linux-android\release\build\ring-0379358625a24cf4\out)
+OUT_DIR = Some(C:\Users\Carlos\projects\rust\LibreriaRust-Faena\target\i686-linux-android\release\build\ring-0379358625a24cf4\out)
 TARGET = Some(i686-linux-android)
 HOST = Some(x86_64-pc-windows-msvc)
 cargo:rerun-if-env-changed=CC_i686-linux-android
-CC_i686-linux-android = None
-cargo:rerun-if-env-changed=CC_i686_linux_android
-CC_i686_linux_android = Some(C:/Users/Carlos/AppData/Local/Android/Sdk/ndk/29.0.13599879/toolchains/llvm/prebuilt/windows-x86_64/bin/i686-linux-android21-clang.cmd)
+CC_i686-linux-android = Some(C:/Users/Carlos/AppData/Local/Android/Sdk/ndk/29.0.13599879\toolchains\llvm\prebuilt\windows-x86_64\bin\clang)
+cargo:rerun-if-env-changed=CC_KNOWN_WRAPPER_CUSTOM
+CC_KNOWN_WRAPPER_CUSTOM = None
 RUSTC_WRAPPER = None
 cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
 cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
@@ -31,7 +31,9 @@ TARGET_CFLAGS = None
 cargo:rerun-if-env-changed=CFLAGS_i686_linux_android
 CFLAGS_i686_linux_android = None
 cargo:rerun-if-env-changed=CFLAGS_i686-linux-android
-CFLAGS_i686-linux-android = None
+CFLAGS_i686-linux-android = Some(--target=i686-linux-android28)
+cargo:rerun-if-env-changed=CC_SHELL_ESCAPED_FLAGS
+CC_SHELL_ESCAPED_FLAGS = None
 CARGO_ENCODED_RUSTFLAGS = Some()
 exit code: 0
 exit code: 0
@@ -53,13 +55,13 @@ exit code: 0
 exit code: 0
 cargo:rustc-link-lib=static=ring_core_0_17_14_
 OPT_LEVEL = Some(3)
-OUT_DIR = Some(C:\Users\Carlos\projects\rust\Libreriarust-faena\target\i686-linux-android\release\build\ring-0379358625a24cf4\out)
+OUT_DIR = Some(C:\Users\Carlos\projects\rust\LibreriaRust-Faena\target\i686-linux-android\release\build\ring-0379358625a24cf4\out)
 TARGET = Some(i686-linux-android)
 HOST = Some(x86_64-pc-windows-msvc)
 cargo:rerun-if-env-changed=CC_i686-linux-android
-CC_i686-linux-android = None
-cargo:rerun-if-env-changed=CC_i686_linux_android
-CC_i686_linux_android = Some(C:/Users/Carlos/AppData/Local/Android/Sdk/ndk/29.0.13599879/toolchains/llvm/prebuilt/windows-x86_64/bin/i686-linux-android21-clang.cmd)
+CC_i686-linux-android = Some(C:/Users/Carlos/AppData/Local/Android/Sdk/ndk/29.0.13599879\toolchains\llvm\prebuilt\windows-x86_64\bin\clang)
+cargo:rerun-if-env-changed=CC_KNOWN_WRAPPER_CUSTOM
+CC_KNOWN_WRAPPER_CUSTOM = None
 RUSTC_WRAPPER = None
 cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
 cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
@@ -72,10 +74,12 @@ TARGET_CFLAGS = None
 cargo:rerun-if-env-changed=CFLAGS_i686_linux_android
 CFLAGS_i686_linux_android = None
 cargo:rerun-if-env-changed=CFLAGS_i686-linux-android
-CFLAGS_i686-linux-android = None
+CFLAGS_i686-linux-android = Some(--target=i686-linux-android28)
+cargo:rerun-if-env-changed=CC_SHELL_ESCAPED_FLAGS
+CC_SHELL_ESCAPED_FLAGS = None
 CARGO_ENCODED_RUSTFLAGS = Some()
 cargo:rustc-link-lib=static=ring_core_0_17_14__test
-cargo:rustc-link-search=native=C:\Users\Carlos\projects\rust\Libreriarust-faena\target\i686-linux-android\release\build\ring-0379358625a24cf4\out
+cargo:rustc-link-search=native=C:\Users\Carlos\projects\rust\LibreriaRust-Faena\target\i686-linux-android\release\build\ring-0379358625a24cf4\out
 cargo:rerun-if-changed=crypto\chacha\asm\chacha-armv4.pl
 cargo:rerun-if-changed=crypto\chacha\asm\chacha-armv8.pl
 cargo:rerun-if-changed=crypto\chacha\asm\chacha-x86.pl

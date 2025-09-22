@@ -14,6 +14,7 @@ dependencies = [
  "jni",
  "jsonwebtoken",
  "log",
+ "once_cell",
  "rand",
  "reqwest",
  "serde",

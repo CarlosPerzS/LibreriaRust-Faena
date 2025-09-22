@@ -1,1 +1,0 @@
-{"rustc":12488743700189009532,"features":"[]","declared_features":"[]","target":3555367617584996540,"profile":2241668132362809309,"path":8721072476839593351,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"debug\\.fingerprint\\jni-sys-9dc729432ff0fd7c\\dep-lib-jni_sys","checksum":false}}],"rustflags":["-C","link-arg=/STACK:8000000"],"config":2069994364910194474,"compile_kind":0}
