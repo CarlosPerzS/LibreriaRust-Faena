@@ -1,1 +1,0 @@
-C:\Users\Carlos\projects\rust\LibreriaRust-Faena\target\i686-linux-android\release\libLibreriaRust_Faena.rlib: C:\Users\Carlos\projects\rust\LibreriaRust-Faena\src\lib.rs C:\Users\Carlos\projects\rust\LibreriaRust-Faena\src\login.rs C:\Users\Carlos\projects\rust\LibreriaRust-Faena\src\modelo.rs
