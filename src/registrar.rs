@@ -1,5 +1,6 @@
 use crate::modelo::{UsuarioGuardado, NuevoUsuario};
 use crate::JVM; 
+use crate::mostrar_error;
 use jni::objects::JValue;
 use jni::objects::GlobalRef;
 use reqwest::Client;
@@ -85,12 +86,4 @@ pub async fn registrar_usuario(this: GlobalRef,cliente: Arc<Client>,username: St
             mostrar_error(err.to_string(), &this);
         }
     }
-}
-
-fn mostrar_error(err:String, this: &GlobalRef){
-    let jvm = JVM.get().expect("JVM sin inicializacion");
-    let mut env = jvm.attach_current_thread().unwrap();
-    let error_jstring = env.new_string(err).unwrap();
-    env.call_method(&this,"mostrar_error","(Ljava/lang/String;)V",
-    &[JValue::from(&error_jstring)],).expect("Fallo al mostrar error");
 }

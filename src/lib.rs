@@ -53,9 +53,10 @@ pub extern "C" fn Java_com_example_faena_login_login(mut env: JNIEnv, this:JObje
         return;
     }
     else {
-        let client = Arc::new(reqwest::Client::new());
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        runtime.block_on(verificar_credenciales(env, this,client, correo, pswd));
+        let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
+        let this_ref = env.new_global_ref(this).unwrap();
+        let client= Arc::new(reqwest::Client::new());
+        runtime.spawn(verificar_credenciales(this_ref,client, correo, pswd));
     }
 }
 
@@ -90,4 +91,12 @@ pub extern "C" fn Java_com_example_faena_register_testJni(
     #[cfg(target_os = "android")]
     log::info!("Rust: Función test_jni llamada exitosamente!");
     42
+}
+
+fn mostrar_error(err:String, this: &GlobalRef){
+    let jvm = JVM.get().expect("JVM sin inicializacion");
+    let mut env = jvm.attach_current_thread().unwrap();
+    let error_jstring = env.new_string(err).unwrap();
+    env.call_method(&this,"mostrar_error","(Ljava/lang/String;)V",
+    &[JValue::from(&error_jstring)],).expect("Fallo al mostrar error");
 }
