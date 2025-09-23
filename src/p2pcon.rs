@@ -1,16 +1,28 @@
 use std::{error::Error, time::Duration, u64};
 
 use futures::StreamExt;
-use libp2p::{Multiaddr, Swarm, noise, ping, swarm::SwarmEvent, tcp, yamux};
+use libp2p::{
+    Multiaddr, Swarm, noise,
+    ping::{self, Event},
+    swarm::SwarmEvent,
+    tcp, yamux,
+};
 use tokio::sync::mpsc;
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
+#[derive(Debug, Clone)]
+pub enum P2PMessage {
+    NewAddress(Multiaddr),
+    PeerEvent(String),
+}
 
-pub async fn init_node(
-    tx: mpsc::Sender<Multiaddr>,
-) -> Result<Arc<Mutex<Swarm<ping::Behaviour>>>, Box<dyn Error>> {
-    let swarm = libp2p::SwarmBuilder::with_new_identity()
+pub async fn start_node(
+    tx: mpsc::Sender<P2PMessage>,
+    remote_addr: Option<String>,
+) -> Result<(), Box<dyn Error>> {
+    println!("Inicializando el nodo...");
+
+    // Crear swarm
+    let mut swarm = libp2p::SwarmBuilder::with_new_identity()
         .with_tokio()
         .with_tcp(
             tcp::Config::default(),
@@ -21,47 +33,62 @@ pub async fn init_node(
         .with_swarm_config(|cfg| cfg.with_idle_connection_timeout(Duration::from_secs(u64::MAX)))
         .build();
 
-    let swarm = Arc::new(Mutex::new(swarm));
+    let listen_addr: Multiaddr = "/ip4/0.0.0.0/tcp/0".parse()?;
+    swarm.listen_on(listen_addr)?;
 
-    {
-        let swarm = Arc::clone(&swarm);
-        tokio::spawn(async move {
-            loop {
-                let mut swarm = swarm.lock().await;
-                let event = swarm.select_next_some().await;
-                if let SwarmEvent::NewListenAddr { address, .. } = event {
-                    let _ = tx.send(address).await;
-                }
-            }
-        });
-    }
-
-    Ok(swarm)
-}
-
-pub async fn start_node(
-    tx: mpsc::Sender<Multiaddr>,
-    remote_addr: Option<String>,
-) -> Result<(), Box<dyn Error>> {
-    let swarm = init_node(tx).await?;
-
+    // llamar
     if let Some(addr) = remote_addr {
         let remote: Multiaddr = addr.parse()?;
-        let mut swarm = swarm.lock().await;
         swarm.dial(remote)?;
         println!("Llamando a {addr}");
     }
 
-    loop {
-        let mut swarm = swarm.lock().await;
+    let mut event_count = 0;
+    const MAX_EVENTS: usize = 10; //Limite de llamadas
+
+    while event_count < MAX_EVENTS {
         match swarm.select_next_some().await {
             SwarmEvent::NewListenAddr { address, .. } => {
-                println!("Escuchando en {address:?}");
+                println!("Escuchando en {address}");
+                let _ = tx.send(P2PMessage::NewAddress(address)).await;
+                event_count += 1;
             }
             SwarmEvent::Behaviour(event) => {
-                println!("{event:?}");
+                // ← SOLO UN BLOQUE
+                // Crear mensaje personalizado basado en el evento
+                let mensaje = match event {
+                    ping::Event {
+                        peer,
+                        connection,
+                        result,
+                    } => match result {
+                        Ok(duration) => {
+                            format!(
+                                "✅ PapuPing exitoso a la elfa: {} - en solo: {:.1}ms",
+                                peer.to_string().chars().take(12).collect::<String>() + "...",
+                                duration.as_millis()
+                            )
+                        }
+                        Err(failure) => {
+                            format!(
+                                "❌ Ping fallido a {}: {}",
+                                peer.to_string().chars().take(12).collect::<String>() + "...",
+                                failure
+                            )
+                        }
+                    },
+                };
+
+                let _ = tx.send(P2PMessage::PeerEvent(mensaje.clone())).await;
+                println!("{}", mensaje);
+                event_count += 1;
             }
-            _ => {}
+            _ => {
+                event_count += 1;
+            }
         }
     }
+
+    println!("Nodo P2P iniciado correctamente");
+    Ok(())
 }
