@@ -19,10 +19,32 @@ fn buscar_caracter_minuscula(password: &str) -> bool{
     password.chars().any(|letra| letra.is_ascii_lowercase())
 }
 
+//Funciones para validar el correo
+fn correo_valido(email:&str) -> bool{
+    if email.contains("@"){
+        if let Some(dominio) = email.split('@').nth(1) {
+            if dominio.contains("."){
+                true
+            }
+            else{
+                false
+            }
+        } else {
+            false 
+        }
+    }
+    else{
+        false
+    }
+}
+
 // Funcion para validar el usuario que quiere registrar la persona
 pub fn validar_usuario(username: &str, correo: &str, pswd: &str, confirm_pswd: &str) -> Result<(), &'static str>{
     if correo.is_empty() || username.is_empty() || pswd.is_empty() || confirm_pswd.is_empty(){
         Err("No puede haber campos vacíos")
+    }
+    else if !correo_valido(correo){
+        Err("El correo no es valido")
     }
     else if pswd != confirm_pswd{
         Err("Las contraseñas no coinciden")

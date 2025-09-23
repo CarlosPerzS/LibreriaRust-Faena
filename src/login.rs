@@ -28,6 +28,9 @@ pub async fn verificar_credenciales(this: GlobalRef, cliente: Arc<Client>,correo
                         mostrar_error(err.to_string(), &this);
                     }
                 }
+            }else if status == reqwest::StatusCode::TOO_MANY_REQUESTS{
+                mostrar_error("Se ha tratado de ingresar mas de 10 ocasiones a la cuenta. Espere 5 minutos.".to_string(), &this);
+
             } else if status == reqwest::StatusCode::UNAUTHORIZED { //revisamos si el status fue un error (no existen esas credenciales)
                 mostrar_error("Credenciales no validas".to_string(), &this);
             }
