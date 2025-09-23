@@ -1,9 +1,0 @@
-C:\Users\Carlos\projects\rust\LibreriaRust-Faena\target\release\deps\num_enum_derive-c354fe83b74d8636.dll: C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\lib.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\enum_attributes.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\parsing.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\utils.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\variant_attributes.rs
-
-C:\Users\Carlos\projects\rust\LibreriaRust-Faena\target\release\deps\num_enum_derive-c354fe83b74d8636.d: C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\lib.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\enum_attributes.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\parsing.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\utils.rs C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\variant_attributes.rs
-
-C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\lib.rs:
-C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\enum_attributes.rs:
-C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\parsing.rs:
-C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\utils.rs:
-C:\Users\Carlos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\num_enum_derive-0.7.4\src\variant_attributes.rs:
