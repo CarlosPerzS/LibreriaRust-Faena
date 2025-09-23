@@ -1,10 +1,14 @@
 #[allow(dead_code)]
 mod login;
 mod modelo;
+mod guardado_local;
+mod crear_sala;
 #[allow(dead_code)]
 mod registrar;
 #[allow(unused_imports)]
 use registrar::{registrar_usuario, validar_usuario};
+use guardado_local::recibir_id;
+use crear_sala::validar_datos_sala_basica;
 #[allow(unused_imports)]
 use std::sync::Arc;
 use login::verificar_credenciales;
@@ -49,14 +53,13 @@ fn init_logger() {
 pub extern "C" fn Java_com_example_faena_login_login(mut env: JNIEnv, this:JObject, correo:JString, pswd:JString){ //en env y class/this son argumentos dados por JNI cuando se invoca a la funcion
     let correo: String = env.get_string(&correo).unwrap().into();
     let pswd: String = env.get_string(&pswd).unwrap().into();
+    let this_ref = env.new_global_ref(this).unwrap();
     if correo.is_empty() || pswd.is_empty(){
-        env.call_method(this, "mostrar_error", "(Ljava/lang/String;)V", //objeto, fn name, parametros y tipo de retorno de la fn
-        &[JValue::from(&env.new_string("Correo o contraseña vacíos").unwrap())]).unwrap(); //argumentos, necesita ser JValue y un array
+        mostrar_error("Correo o contraseña vacíos".to_string(), &this_ref);
         return;
     }
     else {
         let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
-        let this_ref = env.new_global_ref(this).unwrap();
         let client= Arc::new(reqwest::Client::new());
         runtime.spawn(verificar_credenciales(this_ref,client, correo, pswd));
     }
@@ -69,16 +72,49 @@ pub extern "C" fn Java_com_example_faena_register_registrarUsuario(mut env: JNIE
     let pswd: String = env.get_string(&pswd).unwrap().into();
     let username: String = env.get_string(&username).unwrap().into();
     let confirm_pswd: String = env.get_string(&confirm_pswd).unwrap().into();
+    let this_ref = env.new_global_ref(this).unwrap();
     match validar_usuario(&username, &correo, &pswd, &confirm_pswd){
         Ok(_) => {
             let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
-            let this_ref = env.new_global_ref(this).unwrap();
             let client= Arc::new(reqwest::Client::new());
             runtime.spawn(registrar_usuario(this_ref,client, username, correo, pswd));
         }
         Err(err) => {
-            env.call_method(&this, "mostrar_error", "(Ljava/lang/String;)V", //objeto, fn name, parametros y tipo de retorno de la fn
-        &[JValue::from(&env.new_string(err.to_string()).unwrap())]).unwrap(); //argumentos, necesita ser JValue y un array
+            mostrar_error(err.to_string(), &this_ref);
+            return;
+        }
+    }
+}
+
+//funcion para crear una sala
+#[unsafe(no_mangle)]
+pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, autorizacion:JString, token:JString){
+    let nombre_sala: String = env.get_string(&nombre).unwrap().into();
+    let descripcion: String  = env.get_string(&descripcion).unwrap().into(); //ambos
+    let num_participantes= participantes; //ambos
+    let autorizacion: String = env.get_string(&autorizacion).unwrap().into();
+    let acceso:String = env.get_string(&acceso).unwrap().into();
+    let mut is_privada: bool = false;
+    let mut is_filtro_dominio: bool = false;
+    let this_ref = env.new_global_ref(this).unwrap();
+    if acceso == "Privado".to_string(){
+        is_privada = true;
+    }
+    if autorizacion == "Dominios de Correos".to_string(){
+        is_filtro_dominio = true; 
+    }
+    let mut id_usuario:i32 = 0; //id del usuario
+    let res = recibir_id(env.get_string(&token).unwrap().into());
+    match res {
+        Ok(user_id) => id_usuario = user_id,
+        Err(error) => println!("Error obteniendo ID: {}", error),
+    }
+    match validar_datos_sala_basica(&nombre_sala, &descripcion, num_participantes){
+        Ok(_)=>{
+            println!("sala creada");
+        }
+        Err(err)=>{
+            mostrar_error(err.to_string(), &this_ref);
         }
     }
 }
@@ -94,6 +130,8 @@ pub extern "C" fn Java_com_example_faena_register_testJni(
     log::info!("Rust: Función test_jni llamada exitosamente!");
     42
 }
+
+//Funciones generales para ejecutar en java
 
 fn mostrar_error(err:String, this: &GlobalRef){
     let jvm = JVM.get().expect("JVM sin inicializacion");
