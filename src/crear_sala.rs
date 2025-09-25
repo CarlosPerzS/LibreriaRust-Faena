@@ -1,6 +1,9 @@
 use chrono::{DateTime, Local, NaiveDate, NaiveTime, Duration};
 use reqwest::Client;
+use core::time;
 use std::sync::Arc;
+use jni::objects::GlobalRef;
+use crate::{sala_creada, mostrar_error};
 use crate::modelo::{NuevaSalaVotacion};
 //establecemos DateTime en caso de que el usuario deje vacio el campo, le ponemos un minuto despues para evitar problemas
 
@@ -73,7 +76,7 @@ pub fn verificar_time_inicio(time_inicio:&str, date_inicio:&str, hoy:DateTime<Lo
 
 pub fn validar_datos_sala_basica(nombre: &str, descripcion: &str, participantes: i32) ->  Result<(), &'static str>{
     //verificamos los posibles errores que pueda tener el usuario al registrar una sala basica
-    if nombre.is_empty() || descripcion.is_empty(){ 
+    if nombre.trim().is_empty() || descripcion.trim().is_empty(){ 
         Err("No puede haber campos vacíos")
     }
     else if participantes > 100 || participantes < 1{
@@ -110,11 +113,13 @@ duracion_sala: i32, is_recurrente:bool) -> Result<(), &'static str>{
 
 //ENVIAR SALA A LA BD
 pub async fn enviar_sala(
+    this: GlobalRef,
     cliente: Arc<Client>,
     nombre: String,
     descripcion: String,
     num_participantes: i32,
     is_privada:bool,
+    is_filtro_dominio:bool,
     is_recurrente:bool,
     date_inicio:String,
     time_inicio:String,
@@ -133,12 +138,11 @@ pub async fn enviar_sala(
     }
     else{
         let hora_parseada = NaiveTime::parse_from_str(&time_inicio, "%H:%M:%S").expect("Error al parsear la hora");
-        hora_inicio = Some(hora_parseada);
+        hora_inicio = Some(hora_parseada + Duration::seconds(20));
         fecha_inicio = Some(NaiveDate::parse_from_str(&date_inicio, "%Y-%m-%d").expect("Error al parsear la fecha"));
         hora_cierre = Some(hora_parseada + Duration::hours(duracion_sala));
     }
     let url = "http://192.168.100.76:8001/api/salas_votacion";
-    let codigo: String = "23DF34".to_string();
     let sala = NuevaSalaVotacion{
         nombre:nombre,
         descripcion:descripcion,
@@ -149,16 +153,20 @@ pub async fn enviar_sala(
         hora_inicio:hora_inicio,
         hora_cierre:hora_cierre,
         creador_id:id,
-        filtro_dominio:Some(false),
-        codigo_acceso:Some(codigo),
+        filtro_dominio:Some(is_filtro_dominio),
+        codigo_acceso:Some("".to_string()),
         activa:Some(true)
     };
     match cliente.post(url).json(&sala).send().await {
         Ok(res) => {
-            
+            let status = res.status();
+            if status == reqwest::StatusCode::OK{
+                sala_creada(&this);
+            }
         }
         Err(err)=>{
             println!("Error al hacer peticion a la API: {}", err);
+            mostrar_error(err.to_string(), &this);
         }
     }
     Ok(())

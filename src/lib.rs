@@ -1,25 +1,27 @@
-#[allow(dead_code)]
+//Archivos de la libreria
 mod login;
 mod modelo;
 mod guardado_local;
 mod crear_sala;
-#[allow(dead_code)]
 mod registrar;
-#[allow(unused_imports)]
+
+//Funciones dentro de los archivos externos a lib.rs
 use registrar::{registrar_usuario, validar_usuario};
 use guardado_local::recibir_id;
 use crear_sala::validar_datos_sala_basica;
-#[allow(unused_imports)]
-use std::sync::Arc;
 use login::verificar_credenciales;
+use crate::crear_sala::{enviar_sala};
+use crate::modelo::UsuarioGuardado;
+
+//Las demas librerias o dependencias
+use std::sync::Arc;
+use chrono::{Utc, Duration, Local};
 use jni::{JNIEnv, JavaVM};
 use jni::objects::{GlobalRef,JClass, JObject, JValue, JString};
 use jni::sys::{jint,JNI_VERSION_1_6};
 use std::ffi::c_void;
 use once_cell::sync::OnceCell;
 use tokio::runtime::Runtime;
-
-use crate::modelo::UsuarioGuardado;
 
 //variables publicas para la conexion entre la app y libreria
 pub static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new(); //gestor de hilos principal
@@ -47,7 +49,7 @@ fn init_logger() {
         });
     }
 }
-    //se necesita que el nombre sea Java_paquete_clase_nombre de la funcion
+//se necesita que el nombre sea Java_paquete_clase_nombre de la funcion
 //funcion para iniciar sesion en la bd desde rust
 #[unsafe(no_mangle)]
 pub extern "C" fn Java_com_example_faena_login_login(mut env: JNIEnv, this:JObject, correo:JString, pswd:JString){ //en env y class/this son argumentos dados por JNI cuando se invoca a la funcion
@@ -88,7 +90,49 @@ pub extern "C" fn Java_com_example_faena_register_registrarUsuario(mut env: JNIE
 
 //funcion para crear una sala
 #[unsafe(no_mangle)]
+pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, token:JString){
+    //Asignaciones de java a rust
+    let nombre_sala: String = env.get_string(&nombre).unwrap().into();
+    let descripcion: String  = env.get_string(&descripcion).unwrap().into(); //ambos
+    let num_participantes= participantes; //ambos
+    let acceso:String = env.get_string(&acceso).unwrap().into();
+    let mut is_privada: bool = false;
+    let this_ref = env.new_global_ref(this).unwrap();
+    //pasamos los valores de string de accesos y autorizacion a booleanos
+    if acceso == "Privado".to_string(){
+        is_privada = true;
+    }
+    //creamos las fechas de inicio y cierre de una sala basica
+    let time_inicio = Utc::now().time().format("%H:%M:%S").to_string();
+    let date_inicio = Utc::now().date_naive().format("%Y-%m-%d").to_string();
+    let horas:i64 = 1; 
+    //obtenemos el id de nuestro token JWT
+    let mut id_usuario:i32 = 0; //id del usuario
+    let id = recibir_id(env.get_string(&token).unwrap().into());
+    match id {
+        Ok(user_id) => id_usuario = user_id,
+        Err(error) => println!("Error obteniendo ID: {}", error),
+    }
+
+    //Comprobamos primero si la sala basica es validad
+    match validar_datos_sala_basica(&nombre_sala, &descripcion, num_participantes){
+        //Si lo es, obtenemos el runtime y ejecutamos la accion de hacer post a la ruta en un hilo 
+        Ok(_)=>{
+            let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
+            let client= Arc::new(reqwest::Client::new());
+            runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,false, false, 
+                date_inicio, time_inicio, horas, id_usuario));
+        }
+        Err(err)=>{
+            mostrar_error(err.to_string(), &this_ref);
+        }
+    }
+}
+
+/*
+#[unsafe(no_mangle)]
 pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, autorizacion:JString, token:JString){
+    //Asignaciones de java a rust
     let nombre_sala: String = env.get_string(&nombre).unwrap().into();
     let descripcion: String  = env.get_string(&descripcion).unwrap().into(); //ambos
     let num_participantes= participantes; //ambos
@@ -97,27 +141,40 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
     let mut is_privada: bool = false;
     let mut is_filtro_dominio: bool = false;
     let this_ref = env.new_global_ref(this).unwrap();
+    //pasamos los valores de string de accesos y autorizacion a booleanos
     if acceso == "Privado".to_string(){
         is_privada = true;
     }
     if autorizacion == "Dominios de Correos".to_string(){
         is_filtro_dominio = true; 
     }
+    //creamos las fechas de inicio y cierre de una sala basica
+    let time_inicio = (Utc::now().time() + Duration::seconds(20)).to_string();
+    let date_inicio = Utc::now().date_naive().to_string();
+    let horas:i64 = 1; 
+    //obtenemos el id de nuestro token JWT
     let mut id_usuario:i32 = 0; //id del usuario
-    let res = recibir_id(env.get_string(&token).unwrap().into());
-    match res {
+    let id = recibir_id(env.get_string(&token).unwrap().into());
+    match id {
         Ok(user_id) => id_usuario = user_id,
         Err(error) => println!("Error obteniendo ID: {}", error),
     }
+
+    //Comprobamos primero si la sala basica es validad
     match validar_datos_sala_basica(&nombre_sala, &descripcion, num_participantes){
+        //Si lo es, obtenemos el runtime y ejecutamos la accion de hacer post a la ruta en un hilo 
         Ok(_)=>{
-            println!("sala creada");
+            let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
+            let client= Arc::new(reqwest::Client::new());
+            runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,is_filtro_dominio, false, 
+                date_inicio, time_inicio, horas, id_usuario));
         }
         Err(err)=>{
             mostrar_error(err.to_string(), &this_ref);
         }
     }
 }
+*/
 
 
 #[unsafe(no_mangle)]
@@ -147,4 +204,9 @@ fn guardar_usuario(usuario:UsuarioGuardado, this: &GlobalRef){
     let token = env.new_string(&usuario.token).unwrap();
     env.call_method(this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
     &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
+}
+fn sala_creada(this: &GlobalRef){
+    let jvm = JVM.get().expect("JVM sin inicializacion");
+    let mut env = jvm.attach_current_thread().unwrap();
+    env.call_method(this, "sala_creada", "()V", &[]).unwrap();
 }
