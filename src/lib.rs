@@ -4,6 +4,7 @@ mod modelo;
 mod guardado_local;
 mod crear_sala;
 mod registrar;
+mod archivos;
 
 //Funciones dentro de los archivos externos a lib.rs
 use registrar::{registrar_usuario, validar_usuario};
