@@ -142,7 +142,7 @@ pub async fn enviar_sala(
         fecha_inicio = Some(NaiveDate::parse_from_str(&date_inicio, "%Y-%m-%d").expect("Error al parsear la fecha"));
         hora_cierre = Some(hora_parseada + Duration::hours(duracion_sala));
     }
-    let url = "http://192.168.100.76:8001/api/salas_votacion";
+    let url = "http://192.168.1.251:8000/api/salas_votacion";
     let sala = NuevaSalaVotacion{
         nombre:nombre,
         descripcion:descripcion,

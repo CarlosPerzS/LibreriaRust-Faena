@@ -7,7 +7,7 @@ use crate::mostrar_error;
 
 pub async fn verificar_credenciales(this: GlobalRef, cliente: Arc<Client>,correo: String,password: String) 
 {   
-    let url = "http://192.168.100.76:8001/api/login"; // URL de la API
+    let url = "http://192.168.1.251:8000/api/login"; // URL de la API
     let credenciales = Credenciales { //creamos una instancia de la clase credenciales con los datos de login
         email: correo,
         contrasena: password,

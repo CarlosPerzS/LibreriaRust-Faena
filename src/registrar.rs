@@ -75,7 +75,7 @@ pub async fn registrar_usuario(this: GlobalRef,cliente: Arc<Client>,username: St
         email: correo.clone(),
         contrasena: password.clone(),
     };
-    let url="http://192.168.100.76:8001/api/usuarios";
+    let url="http://192.168.1.251:8000/api/usuarios";
     let res= cliente.post(url).json(&nuevo_usuario).send().await;
     match res {
         Ok(_res)=>{
