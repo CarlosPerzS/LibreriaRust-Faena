@@ -64,15 +64,15 @@ pub async fn start_node(
                     } => match result {
                         Ok(duration) => {
                             format!(
-                                "✅ PapuPing exitoso a la elfa: {} - en solo: {:.1}ms",
-                                peer.to_string().chars().take(12).collect::<String>() + "...",
+                                " Ping exitoso a: {} - en solo: {:.1}ms",
+                                peer.to_string().chars().take(5).collect::<String>() + "...",
                                 duration.as_millis()
                             )
                         }
                         Err(failure) => {
                             format!(
-                                "❌ Ping fallido a {}: {}",
-                                peer.to_string().chars().take(12).collect::<String>() + "...",
+                                "Ping fallido a {}: {}",
+                                peer.to_string().chars().take(5).collect::<String>() + "...",
                                 failure
                             )
                         }
