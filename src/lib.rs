@@ -199,6 +199,7 @@ fn mostrar_error(err:String, this: &GlobalRef){
     env.call_method(&this,"mostrar_error","(Ljava/lang/String;)V",
     &[JValue::from(&error_jstring)],).expect("Fallo al mostrar error");
 }
+
 fn guardar_usuario(usuario:UsuarioGuardado, this: &GlobalRef){
     let jvm = JVM.get().expect("JVM sin inicializacion");
     let mut env = jvm.attach_current_thread().unwrap();
@@ -207,6 +208,7 @@ fn guardar_usuario(usuario:UsuarioGuardado, this: &GlobalRef){
     env.call_method(this, "guardar_usuario", "(Ljava/lang/String;Ljava/lang/String;)V",
     &[JValue::from(&nombre), JValue::from(&token)]).unwrap();
 }
+
 fn sala_creada(this: &GlobalRef){
     let jvm = JVM.get().expect("JVM sin inicializacion");
     let mut env = jvm.attach_current_thread().unwrap();
