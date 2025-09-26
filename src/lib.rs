@@ -111,8 +111,11 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
     let mut id_usuario:i32 = 0; //id del usuario
     let id = recibir_id(env.get_string(&token).unwrap().into());
     match id {
-        Ok(user_id) => id_usuario = user_id,
-        Err(error) => println!("Error obteniendo ID: {}", error),
+        Ok(user_id) =>{ 
+            id_usuario = user_id;
+            mostrar_error(id_usuario.to_string(), &this_ref);
+        }
+        Err(error) => mostrar_error(error, &this_ref),
     }
 
     //Comprobamos primero si la sala basica es validad
@@ -130,9 +133,8 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
     }
 }
 
-/*
 #[unsafe(no_mangle)]
-pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, autorizacion:JString, token:JString){
+pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, autorizacion:JString, token:JString){
     //Asignaciones de java a rust
     let nombre_sala: String = env.get_string(&nombre).unwrap().into();
     let descripcion: String  = env.get_string(&descripcion).unwrap().into(); //ambos
@@ -175,7 +177,6 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
         }
     }
 }
-*/
 
 
 #[unsafe(no_mangle)]
