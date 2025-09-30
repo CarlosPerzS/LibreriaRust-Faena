@@ -124,7 +124,8 @@ pub async fn enviar_sala(
     date_inicio:String,
     time_inicio:String,
     duracion_sala: i64, 
-    id:i32
+    id:i32,
+    token:String
 ) -> Result<(), &'static str>{
     //Declaramos las variables option que son las de chronos
     let hora_inicio:Option<NaiveTime>;
@@ -157,7 +158,7 @@ pub async fn enviar_sala(
         codigo_acceso:Some("".to_string()),
         activa:Some(true)
     };
-    match cliente.post(url).json(&sala).send().await {
+    match cliente.post(url).header("Authorization", format!("Bearer {}", token)).json(&sala).send().await {
         Ok(res) => {
             let status = res.status();
             if status == reqwest::StatusCode::OK{

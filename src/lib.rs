@@ -108,8 +108,9 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
     let date_inicio = Utc::now().date_naive().format("%Y-%m-%d").to_string();
     let horas:i64 = 1; 
     //obtenemos el id de nuestro token JWT
+    let jwt = env.get_string(&token).unwrap().into();
     let mut id_usuario:i32 = 0; //id del usuario
-    let id = recibir_id(env.get_string(&token).unwrap().into());
+    let id = recibir_id(&jwt);
     match id {
         Ok(user_id) =>{ 
             id_usuario = user_id;
@@ -125,7 +126,7 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
             let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
             let client= Arc::new(reqwest::Client::new());
             runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,false, false, 
-                date_inicio, time_inicio, horas, id_usuario));
+                date_inicio, time_inicio, horas, id_usuario, jwt));
         }
         Err(err)=>{
             mostrar_error(err.to_string(), &this_ref);
@@ -156,8 +157,9 @@ pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JN
     let date_inicio = Utc::now().date_naive().to_string();
     let horas:i64 = 1; 
     //obtenemos el id de nuestro token JWT
+    let jwt = env.get_string(&token).unwrap().into();
     let mut id_usuario:i32 = 0; //id del usuario
-    let id = recibir_id(env.get_string(&token).unwrap().into());
+    let id = recibir_id(&jwt);
     match id {
         Ok(user_id) => id_usuario = user_id,
         Err(error) => println!("Error obteniendo ID: {}", error),
@@ -170,7 +172,7 @@ pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JN
             let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
             let client= Arc::new(reqwest::Client::new());
             runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,is_filtro_dominio, false, 
-                date_inicio, time_inicio, horas, id_usuario));
+                date_inicio, time_inicio, horas, id_usuario,jwt));
         }
         Err(err)=>{
             mostrar_error(err.to_string(), &this_ref);
