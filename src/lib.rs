@@ -18,7 +18,7 @@ use crate::modelo::UsuarioGuardado;
 use std::sync::Arc;
 use chrono::{Utc, Duration, Local};
 use jni::{JNIEnv, JavaVM};
-use jni::objects::{GlobalRef,JClass, JObject, JValue, JString};
+use jni::objects::{GlobalRef,JClass, JObject, JValue, JString, JByteArray};
 use jni::sys::{jint,JNI_VERSION_1_6};
 use std::ffi::c_void;
 use once_cell::sync::OnceCell;
@@ -125,7 +125,7 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
         Ok(_)=>{
             let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
             let client= Arc::new(reqwest::Client::new());
-            runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,false, false, 
+            runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,false,None, false, 
                 date_inicio, time_inicio, horas, id_usuario, jwt));
         }
         Err(err)=>{
@@ -135,7 +135,7 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, autorizacion:JString, token:JString){
+pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, autorizacion:JString, archivo:JByteArray, token:JString){
     //Asignaciones de java a rust
     let nombre_sala: String = env.get_string(&nombre).unwrap().into();
     let descripcion: String  = env.get_string(&descripcion).unwrap().into(); //ambos
@@ -152,6 +152,8 @@ pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JN
     if autorizacion == "Dominios de Correos".to_string(){
         is_filtro_dominio = true; 
     }
+    //convertimos los bytes de java a vector
+    let excel_bytes: Vec<u8> = env.convert_byte_array(&archivo).expect("Fallo al convertir el byte array de Java a Rust");
     //creamos las fechas de inicio y cierre de una sala basica
     let time_inicio = (Utc::now().time() + Duration::seconds(20)).to_string();
     let date_inicio = Utc::now().date_naive().to_string();
@@ -171,7 +173,7 @@ pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JN
         Ok(_)=>{
             let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
             let client= Arc::new(reqwest::Client::new());
-            runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,is_filtro_dominio, false, 
+            runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,is_filtro_dominio,Some(excel_bytes), false, 
                 date_inicio, time_inicio, horas, id_usuario,jwt));
         }
         Err(err)=>{

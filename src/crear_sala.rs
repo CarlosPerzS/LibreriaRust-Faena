@@ -1,6 +1,7 @@
 use chrono::{DateTime, Local, NaiveDate, NaiveTime, Duration};
 use reqwest::Client;
 use core::time;
+use std::io::Bytes;
 use std::sync::Arc;
 use jni::objects::GlobalRef;
 use crate::{sala_creada, mostrar_error};
@@ -120,6 +121,7 @@ pub async fn enviar_sala(
     num_participantes: i32,
     is_privada:bool,
     is_filtro_dominio:bool,
+    filtros:Option<Vec<u8>>,
     is_recurrente:bool,
     date_inicio:String,
     time_inicio:String,
