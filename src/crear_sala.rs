@@ -1,7 +1,5 @@
-use chrono::{DateTime, Local, NaiveDate, NaiveTime, Duration};
+use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use reqwest::Client;
-use core::time;
-use std::io::Bytes;
 use std::sync::Arc;
 use jni::objects::GlobalRef;
 use crate::{sala_creada, mostrar_error};
@@ -89,7 +87,7 @@ pub fn validar_datos_sala_basica(nombre: &str, descripcion: &str, participantes:
 }
 
 pub fn validar_datos_sala_premium (nombre: &str, descripcion: &str, participantes: i32,date_inicio:&str, time_inicio:&str,
-duracion_sala: i32, is_recurrente:bool) -> Result<(), &'static str>{
+duracion_sala: i64, is_recurrente:bool) -> Result<(), &'static str>{
     let now = Local::now(); //agarramos la hora y tiempo local del dispositivo
     //verificamos sala de premiums
     if nombre.is_empty() || descripcion.is_empty(){
@@ -140,10 +138,15 @@ pub async fn enviar_sala(
         hora_cierre = None;
     }
     else{
-        let hora_parseada = NaiveTime::parse_from_str(&time_inicio, "%H:%M:%S").expect("Error al parsear la hora");
-        hora_inicio = Some(hora_parseada + Duration::seconds(20));
-        fecha_inicio = Some(NaiveDate::parse_from_str(&date_inicio, "%Y-%m-%d").expect("Error al parsear la fecha"));
-        hora_cierre = Some(hora_parseada + Duration::hours(duracion_sala));
+        let fecha_parseada = NaiveDate::parse_from_str(&date_inicio, "%Y-%m-%d").expect("Error al parsear la fecha");
+        let mut hora_parseada = NaiveTime::parse_from_str(&time_inicio, "%H:%M:%S").expect("Error al parsear la hora");
+        hora_parseada = hora_parseada + Duration::seconds(5);
+        let tiempo_local = NaiveDateTime::new(fecha_parseada, hora_parseada);
+        let tiempo_inicio_local: DateTime<Local> = Local.from_local_datetime(&tiempo_local).single().unwrap();
+        let fecha_hora_inicio_utc: DateTime<Utc> = tiempo_inicio_local.with_timezone(&Utc);
+        hora_inicio = Some(fecha_hora_inicio_utc.time());
+        fecha_inicio = Some(fecha_hora_inicio_utc.date_naive());
+        hora_cierre = Some(fecha_hora_inicio_utc.time() + Duration::hours(duracion_sala));
     }
     let url = "http://192.168.100.76:8001/api/salas_votacion";
     let sala = NuevaSalaVotacion{

@@ -9,14 +9,14 @@ mod archivos;
 //Funciones dentro de los archivos externos a lib.rs
 use registrar::{registrar_usuario, validar_usuario};
 use guardado_local::recibir_id;
-use crear_sala::validar_datos_sala_basica;
+use crear_sala::{validar_datos_sala_basica, validar_datos_sala_premium, establecer_fecha_predeterminada, establecer_hora_predeterminada};
 use login::verificar_credenciales;
 use crate::crear_sala::{enviar_sala};
 use crate::modelo::UsuarioGuardado;
 
 //Las demas librerias o dependencias
 use std::sync::Arc;
-use chrono::{Utc, Duration, Local};
+use chrono::{Utc};
 use jni::{JNIEnv, JavaVM};
 use jni::objects::{GlobalRef,JClass, JObject, JValue, JString, JByteArray};
 use jni::sys::{jint,JNI_VERSION_1_6};
@@ -118,7 +118,6 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
         }
         Err(error) => mostrar_error(error, &this_ref),
     }
-
     //Comprobamos primero si la sala basica es validad
     match validar_datos_sala_basica(&nombre_sala, &descripcion, num_participantes){
         //Si lo es, obtenemos el runtime y ejecutamos la accion de hacer post a la ruta en un hilo 
@@ -135,17 +134,27 @@ pub extern "C" fn Java_com_example_faena_createRoomBasic_crearSala(mut env: JNIE
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, participantes:jint,acceso:JString, autorizacion:JString, archivo:JByteArray, token:JString){
+pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JNIEnv, this:JObject, nombre:JString, descripcion:JString, 
+    participantes:jint, tipo:JString, fecha:JString, hora:JString, duracion:jint, acceso:JString, autorizacion:JString, 
+    archivo:JByteArray, token:JString){
     //Asignaciones de java a rust
     let nombre_sala: String = env.get_string(&nombre).unwrap().into();
     let descripcion: String  = env.get_string(&descripcion).unwrap().into(); //ambos
     let num_participantes= participantes; //ambos
+    let fecha_inicio:String = env.get_string(&fecha).unwrap().into();
+    let hora_inicio:String = env.get_string(&hora).unwrap().into();
+    let duracion:i64 = duracion.into();
+    let tipo: String = env.get_string(&tipo).unwrap().into();
     let autorizacion: String = env.get_string(&autorizacion).unwrap().into();
     let acceso:String = env.get_string(&acceso).unwrap().into();
+    let mut is_recurrente:bool = false;
     let mut is_privada: bool = false;
     let mut is_filtro_dominio: bool = false;
     let this_ref = env.new_global_ref(this).unwrap();
     //pasamos los valores de string de accesos y autorizacion a booleanos
+    if tipo == "Recurrente".to_string(){
+        is_recurrente = true;
+    }
     if acceso == "Privado".to_string(){
         is_privada = true;
     }
@@ -154,10 +163,9 @@ pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JN
     }
     //convertimos los bytes de java a vector
     let excel_bytes: Vec<u8> = env.convert_byte_array(&archivo).expect("Fallo al convertir el byte array de Java a Rust");
-    //creamos las fechas de inicio y cierre de una sala basica
-    let time_inicio = (Utc::now().time() + Duration::seconds(20)).to_string();
-    let date_inicio = Utc::now().date_naive().to_string();
-    let horas:i64 = 1; 
+    //creamos las fechas de inicio y cierre de una sala unica o recurrente (es una funcion que puede retornar el argumento)
+    let time_inicio = establecer_hora_predeterminada(&hora_inicio);
+    let date_inicio = establecer_fecha_predeterminada(&fecha_inicio);
     //obtenemos el id de nuestro token JWT
     let jwt = env.get_string(&token).unwrap().into();
     let mut id_usuario:i32 = 0; //id del usuario
@@ -167,14 +175,14 @@ pub extern "C" fn Java_com_example_faena_createRoomPremium_crearSala(mut env: JN
         Err(error) => println!("Error obteniendo ID: {}", error),
     }
 
-    //Comprobamos primero si la sala basica es validad
-    match validar_datos_sala_basica(&nombre_sala, &descripcion, num_participantes){
+    //Comprobamos primero si la sala premium es validad
+    match validar_datos_sala_premium(&nombre_sala, &descripcion, num_participantes, &fecha_inicio, &hora_inicio, duracion, is_recurrente){
         //Si lo es, obtenemos el runtime y ejecutamos la accion de hacer post a la ruta en un hilo 
         Ok(_)=>{
             let runtime = TOKIO_RUNTIME.get_or_init(|| Runtime::new().unwrap());
             let client= Arc::new(reqwest::Client::new());
             runtime.spawn(enviar_sala(this_ref, client, nombre_sala, descripcion, num_participantes, is_privada,is_filtro_dominio,Some(excel_bytes), false, 
-                date_inicio, time_inicio, horas, id_usuario,jwt));
+                date_inicio, time_inicio, duracion, id_usuario,jwt));
         }
         Err(err)=>{
             mostrar_error(err.to_string(), &this_ref);
