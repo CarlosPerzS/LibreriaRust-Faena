@@ -93,7 +93,7 @@ duracion_sala: i64, is_recurrente:bool) -> Result<(), &'static str>{
     if nombre.is_empty() || descripcion.is_empty(){
         Err("No puede haber campos vacios")
     }
-    else if participantes > 1000 || participantes < 1 {
+    else if participantes > 5000 || participantes < 1 {
         Err("Numero de participantes debe de ser entre 1 y 1000")
     }
     else if !is_recurrente && (duracion_sala > 24 && duracion_sala < 1) {
@@ -131,23 +131,25 @@ pub async fn enviar_sala(
     let hora_inicio:Option<NaiveTime>;
     let fecha_inicio:Option<NaiveDate>;
     let hora_cierre:Option<NaiveTime>;
-    //Manipulamos los tiempos si es unica, si es recurrente las ponemos None
-    if is_recurrente{
-        hora_inicio = None;
-        fecha_inicio = None;
+    //Manipulamos los tiempos si es unica, si es recurrente no hay hora de cierre
+    let fecha_parseada = NaiveDate::parse_from_str(&date_inicio, "%Y-%m-%d").expect("Error al parsear la fecha");
+    let mut hora_parseada = NaiveTime::parse_from_str(&time_inicio, "%H:%M:%S").expect("Error al parsear la hora");
+    hora_parseada = hora_parseada + Duration::seconds(5);
+    let tiempo_local = NaiveDateTime::new(fecha_parseada, hora_parseada);
+    let tiempo_inicio_local: DateTime<Local> = Local.from_local_datetime(&tiempo_local).single().unwrap();
+    let fecha_hora_inicio_utc: DateTime<Utc> = tiempo_inicio_local.with_timezone(&Utc);
+    hora_inicio = Some(fecha_hora_inicio_utc.time());
+    fecha_inicio = Some(fecha_hora_inicio_utc.date_naive());
+
+    //Hora de cierre
+    if !is_recurrente{
         hora_cierre = None;
     }
     else{
-        let fecha_parseada = NaiveDate::parse_from_str(&date_inicio, "%Y-%m-%d").expect("Error al parsear la fecha");
-        let mut hora_parseada = NaiveTime::parse_from_str(&time_inicio, "%H:%M:%S").expect("Error al parsear la hora");
-        hora_parseada = hora_parseada + Duration::seconds(5);
-        let tiempo_local = NaiveDateTime::new(fecha_parseada, hora_parseada);
-        let tiempo_inicio_local: DateTime<Local> = Local.from_local_datetime(&tiempo_local).single().unwrap();
-        let fecha_hora_inicio_utc: DateTime<Utc> = tiempo_inicio_local.with_timezone(&Utc);
-        hora_inicio = Some(fecha_hora_inicio_utc.time());
-        fecha_inicio = Some(fecha_hora_inicio_utc.date_naive());
         hora_cierre = Some(fecha_hora_inicio_utc.time() + Duration::hours(duracion_sala));
     }
+
+    //conexion
     let url = "http://192.168.100.76:8001/api/salas_votacion";
     let sala = NuevaSalaVotacion{
         nombre:nombre,
